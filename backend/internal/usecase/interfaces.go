@@ -19,7 +19,7 @@ type (
 	ContainerRepo interface {
 		GetContainer(ctx context.Context, ip string) (entity.Container, error)
 		GetAllContainers(ctx context.Context) ([]entity.Container, error)
-		AddContainer(ctx context.Context, ip string) (string, error)
+		AddContainer(ctx context.Context, container entity.Container) (string, error)
 		UpdateContainer(ctx context.Context, container entity.Container) (entity.Container, error)
 		DeleteContainer(ctx context.Context, ip string) error
 	}

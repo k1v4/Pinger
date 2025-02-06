@@ -73,11 +73,11 @@ func (cr *ContainerRepo) GetAllContainers(ctx context.Context) ([]entity.Contain
 	return containers, nil
 }
 
-func (cr *ContainerRepo) AddContainer(ctx context.Context, ip string) (string, error) {
+func (cr *ContainerRepo) AddContainer(ctx context.Context, container entity.Container) (string, error) {
 	sql, args, err := cr.Builder.
 		Insert("containers").
-		Columns("ip").
-		Values(ip).
+		Columns("ip", "ping_time", "last_successful").
+		Values(container.IpAddr, container.PingTime, container.LastSuccessful).
 		ToSql()
 	if err != nil {
 		return "", fmt.Errorf("ContainerRepo-AddContainer: %w", err)
@@ -88,7 +88,7 @@ func (cr *ContainerRepo) AddContainer(ctx context.Context, ip string) (string, e
 		return "", fmt.Errorf("ContainerRepo-AddContainer: %w", err)
 	}
 
-	return ip, nil
+	return container.IpAddr, nil
 }
 
 func (cr *ContainerRepo) UpdateContainer(ctx context.Context, container entity.Container) (entity.Container, error) {
