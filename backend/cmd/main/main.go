@@ -4,11 +4,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/k1v4/Pinger/backend/internal/config"
+	v1 "github.com/k1v4/Pinger/backend/internal/controller/http/v1"
 	"github.com/k1v4/Pinger/backend/internal/usecase"
 	"github.com/k1v4/Pinger/backend/internal/usecase/repository"
 	"github.com/k1v4/Pinger/backend/pkg/DB/postgres"
+	"github.com/k1v4/Pinger/backend/pkg/httpserver"
 	"github.com/k1v4/Pinger/backend/pkg/logger"
 	"github.com/labstack/echo/v4"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
 )
 
 func main() {
@@ -42,8 +48,26 @@ func main() {
 	containerUseCase := usecase.New(
 		repository.NewContainerRepo(pg),
 	)
-	_ = containerUseCase
 
 	handler := echo.New()
-	_ = handler
+	v1.NewRouter(handler, loggerBack, containerUseCase)
+
+	httpServer := httpserver.New(handler, httpserver.Port(strconv.Itoa(cfg.RestServerPort)))
+
+	// signal for graceful shutdown
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case s := <-interrupt:
+		loggerBack.Info(ctx, "app - Run - signal: "+s.String())
+	case err = <-httpServer.Notify():
+		loggerBack.Error(ctx, fmt.Sprintf("app - Run - httpServer.Notify: %s", err))
+	}
+
+	// shutdown
+	err = httpServer.Shutdown()
+	if err != nil {
+		loggerBack.Error(ctx, fmt.Sprintf("app - Run - httpServer.Shutdown: %s", err))
+	}
 }

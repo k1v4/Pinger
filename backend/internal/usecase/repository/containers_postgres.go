@@ -23,10 +23,11 @@ func NewContainerRepo(pg *postgres.Postgres) *ContainerRepo {
 func (cr *ContainerRepo) GetContainer(ctx context.Context, ip string) (entity.Container, error) {
 	sql, args, err := cr.Builder.
 		Select("*").
+		From("containers").
 		Where(sq.Eq{"ip": ip}).
 		ToSql()
 	if err != nil {
-		return entity.Container{}, fmt.Errorf("GetContainer: %w", err)
+		return entity.Container{}, fmt.Errorf("ContainerRepo-GetContainer: %w", err)
 	}
 
 	var container entity.Container
@@ -35,7 +36,7 @@ func (cr *ContainerRepo) GetContainer(ctx context.Context, ip string) (entity.Co
 		QueryRow(ctx, sql, args...).
 		Scan(&container.IpAddr, &container.PingTime, &container.LastSuccessful)
 	if err != nil {
-		return entity.Container{}, fmt.Errorf("GetContainer: %w", err)
+		return entity.Container{}, fmt.Errorf("ContainerRepo-GetContainer: %w", err)
 	}
 
 	return container, nil
@@ -43,16 +44,16 @@ func (cr *ContainerRepo) GetContainer(ctx context.Context, ip string) (entity.Co
 
 func (cr *ContainerRepo) GetAllContainers(ctx context.Context) ([]entity.Container, error) {
 	sql, _, err := cr.Builder.
-		Select("source, destination, original, translation").
-		From("history").
+		Select("*").
+		From("containers").
 		ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("TranslationRepo - GetHistory - r.Builder: %w", err)
+		return nil, fmt.Errorf("ContainerRepo-GetAllContainers-r.Builder: %w", err)
 	}
 
 	rows, err := cr.Pool.Query(ctx, sql)
 	if err != nil {
-		return nil, fmt.Errorf("TranslationRepo - GetHistory - r.Pool.Query: %w", err)
+		return nil, fmt.Errorf("ContainerRepo-GetAllContainers-r.Pool.Query: %w", err)
 	}
 	defer rows.Close()
 
@@ -63,7 +64,7 @@ func (cr *ContainerRepo) GetAllContainers(ctx context.Context) ([]entity.Contain
 
 		err = rows.Scan(&container.IpAddr, &container.PingTime, &container.LastSuccessful)
 		if err != nil {
-			return nil, fmt.Errorf("GetAllContainers: %w", err)
+			return nil, fmt.Errorf("ContainerRepo-GetAllContainers: %w", err)
 		}
 
 		containers = append(containers, container)
@@ -79,12 +80,12 @@ func (cr *ContainerRepo) AddContainer(ctx context.Context, ip string) (string, e
 		Values(ip).
 		ToSql()
 	if err != nil {
-		return "", fmt.Errorf("TranslationRepo - Store - r.Builder: %w", err)
+		return "", fmt.Errorf("ContainerRepo-AddContainer: %w", err)
 	}
 
 	_, err = cr.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return "", fmt.Errorf("TranslationRepo - Store - r.Pool.Exec: %w", err)
+		return "", fmt.Errorf("ContainerRepo-AddContainer: %w", err)
 	}
 
 	return ip, nil
@@ -97,12 +98,12 @@ func (cr *ContainerRepo) UpdateContainer(ctx context.Context, container entity.C
 		Where(sq.Eq{"ip": container.IpAddr}).
 		ToSql()
 	if err != nil {
-		return entity.Container{}, err
+		return entity.Container{}, fmt.Errorf("ContainerRepo-UpdateContainer: %w", err)
 	}
 
 	_, err = cr.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return entity.Container{}, fmt.Errorf("UpdateContainer: %w", err)
+		return entity.Container{}, fmt.Errorf("ContainerRepo-UpdateContainer: %w", err)
 	}
 
 	return container, nil
@@ -111,12 +112,12 @@ func (cr *ContainerRepo) UpdateContainer(ctx context.Context, container entity.C
 func (cr *ContainerRepo) DeleteContainer(ctx context.Context, ip string) error {
 	sql, args, err := cr.Builder.Delete("containers").Where(sq.Eq{"ip": ip}).ToSql()
 	if err != nil {
-		return fmt.Errorf("DeleteContainer: %w", err)
+		return fmt.Errorf("ContainerRepo-DeleteContainer: %w", err)
 	}
 
 	_, err = cr.Pool.Exec(ctx, sql, args...)
 	if err != nil {
-		return fmt.Errorf("DeleteContainer: %w", err)
+		return fmt.Errorf("ContainerRepo-DeleteContainer: %w", err)
 	}
 
 	return nil
