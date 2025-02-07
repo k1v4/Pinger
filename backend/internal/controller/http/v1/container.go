@@ -97,7 +97,6 @@ func (tr *conatainerRoutes) CheckPingContainer(c echo.Context) error {
 		PingTime:       u.PingTime,
 		LastSuccessful: u.LastSuccessful,
 	})
-	tr.l.Info(ctx, fmt.Sprintf("%s", updContainer.IpAddr))
 	if err != nil {
 		tr.l.Error(ctx, fmt.Sprintf("http-v1-CheckPingContainer: %s", err))
 		errorResponse(c, http.StatusInternalServerError, "database problems")
@@ -105,7 +104,7 @@ func (tr *conatainerRoutes) CheckPingContainer(c echo.Context) error {
 		return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
 	}
 
-	return c.JSON(http.StatusOK, updContainer)
+	return c.JSON(http.StatusOK, dto.NewContainerResponse{Ip: updContainer.IpAddr})
 }
 
 func (tr *conatainerRoutes) Container(c echo.Context) error {
