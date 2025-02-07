@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 	"github.com/k1v4/Pinger/backend/pkg/DB/postgres"
 )
 
@@ -13,15 +12,15 @@ type Config struct {
 }
 
 func MustLoadConfig() *Config {
-	errEnv := godotenv.Load(".env") // Явно указываем путь
-	if errEnv != nil {
-		panic(errEnv)
-	}
+	//errEnv := godotenv.Load(".env") // Явно указываем путь
+	//if errEnv != nil {
+	//	panic(errEnv)
+	//}
 
 	cfg := Config{}
 	err := cleanenv.ReadEnv(&cfg)
 	if err != nil {
-		panic(nil)
+		panic(err)
 	}
 
 	return &cfg
