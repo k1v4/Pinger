@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"fmt"
 	"github.com/k1v4/Pinger/backend/internal/controller/dto"
 	"github.com/k1v4/Pinger/backend/internal/entity"
@@ -28,7 +29,7 @@ func newContainerRoutes(handler *echo.Group, t usecase.Container, l logger.Logge
 		h.GET("/:ip", r.Container)
 
 		// POST /v1/containers
-		h.POST("/:ip", r.NewContainer)
+		h.POST("/:ip", r.CheckPingContainer)
 
 		// PUT /v1/containers/{ip}
 		h.PUT("/:ip", r.UpdateContainer)
@@ -37,6 +38,74 @@ func newContainerRoutes(handler *echo.Group, t usecase.Container, l logger.Logge
 		h.DELETE("/:ip", r.DeleteContainer)
 
 	}
+}
+
+func (tr *conatainerRoutes) CheckPingContainer(c echo.Context) error {
+	ip := c.Param("ip")
+	ctx := c.Request().Context()
+
+	u := new(dto.DtoPingContainer)
+	if err := c.Bind(u); err != nil {
+		tr.l.Error(ctx, fmt.Sprintf("http-v1-CheckPingContainer: %s", err))
+		errorResponse(c, http.StatusBadRequest, "bad request")
+
+		return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
+	}
+
+	getContainer, err := tr.t.Container(ctx, ip)
+	if err != nil {
+		if errors.Is(err, usecase.ErrNoIp) {
+			ip, err = tr.t.NewContainer(ctx, entity.Container{
+				IpAddr:         ip,
+				PingTime:       u.PingTime,
+				LastSuccessful: u.LastSuccessful,
+			})
+			if err != nil {
+				tr.l.Error(ctx, fmt.Sprintf("http-v1-CheckPingContainer: %s", err))
+				errorResponse(c, http.StatusInternalServerError, "database problems")
+
+				return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
+			}
+
+			return c.JSON(http.StatusOK, dto.NewContainerResponse{Ip: ip})
+		}
+
+		tr.l.Error(ctx, fmt.Sprintf("http-v1-CheckPingContainer: %s", err))
+		errorResponse(c, http.StatusInternalServerError, "database problems")
+
+		return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
+	}
+
+	if !u.IsSuccessful {
+		container, err2 := tr.t.UpdateContainer(ctx, entity.Container{
+			IpAddr:         ip,
+			PingTime:       u.PingTime,
+			LastSuccessful: getContainer.LastSuccessful,
+		})
+		if err2 != nil {
+			tr.l.Error(ctx, fmt.Sprintf("http-v1-CheckPingContainer: %s", err2))
+			errorResponse(c, http.StatusInternalServerError, "database problems")
+
+			return fmt.Errorf("http-v1-CheckPingContainer: %w", err2)
+		}
+
+		return c.JSON(http.StatusOK, container)
+	}
+
+	updContainer, err := tr.t.UpdateContainer(ctx, entity.Container{
+		IpAddr:         ip,
+		PingTime:       u.PingTime,
+		LastSuccessful: u.LastSuccessful,
+	})
+	tr.l.Info(ctx, fmt.Sprintf("%s", updContainer.IpAddr))
+	if err != nil {
+		tr.l.Error(ctx, fmt.Sprintf("http-v1-CheckPingContainer: %s", err))
+		errorResponse(c, http.StatusInternalServerError, "database problems")
+
+		return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
+	}
+
+	return c.JSON(http.StatusOK, updContainer)
 }
 
 func (tr *conatainerRoutes) Container(c echo.Context) error {
@@ -72,7 +141,19 @@ func (tr *conatainerRoutes) NewContainer(c echo.Context) error {
 	ip := c.Param("ip")
 	ctx := c.Request().Context()
 
-	ip, err := tr.t.NewContainer(ctx, ip)
+	u := new(dto.AddContainerRequest)
+	if err := c.Bind(u); err != nil {
+		tr.l.Error(ctx, fmt.Sprintf("http-v1-NewContainer: %s", err))
+		errorResponse(c, http.StatusBadRequest, "bad request")
+
+		return fmt.Errorf("http-v1-NewContainer: %w", err)
+	}
+
+	ip, err := tr.t.NewContainer(ctx, entity.Container{
+		IpAddr:         ip,
+		PingTime:       u.PingTime,
+		LastSuccessful: u.LastSuccessful,
+	})
 	if err != nil {
 		tr.l.Error(ctx, fmt.Sprintf("http-v1-NewContainer: %s", err))
 		errorResponse(c, http.StatusInternalServerError, "database problems")

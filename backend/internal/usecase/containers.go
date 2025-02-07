@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/k1v4/Pinger/backend/internal/entity"
-	"time"
 )
 
 type ContainerUseCase struct {
@@ -35,17 +34,17 @@ func (cus *ContainerUseCase) AllContainers(ctx context.Context) ([]entity.Contai
 	return containers, nil
 }
 
-func (cus *ContainerUseCase) NewContainer(ctx context.Context, ip string) (string, error) {
-	container, err := cus.repo.AddContainer(ctx, entity.Container{
-		IpAddr:         ip,
-		PingTime:       time.Time{},
-		LastSuccessful: time.Time{},
+func (cus *ContainerUseCase) NewContainer(ctx context.Context, pingContainer entity.Container) (string, error) {
+	ip, err := cus.repo.AddContainer(ctx, entity.Container{
+		IpAddr:         pingContainer.IpAddr,
+		PingTime:       pingContainer.PingTime,
+		LastSuccessful: pingContainer.LastSuccessful,
 	})
 	if err != nil {
 		return "", fmt.Errorf("ContainerUseCase_NewContainer: %w", err)
 	}
 
-	return container, nil
+	return ip, nil
 }
 
 func (cus *ContainerUseCase) UpdateContainer(ctx context.Context, container entity.Container) (entity.Container, error) {

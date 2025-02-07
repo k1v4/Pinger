@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS containers (
                                      ip TEXT PRIMARY KEY,
-                                     ping_time DATE NOT NULL,
+                                     ping_time INTEGER NOT NULL,
                                      last_successful DATE NOT NULL
 );
 

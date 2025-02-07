@@ -2,9 +2,13 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jackc/pgx/v4"
 	"github.com/k1v4/Pinger/backend/internal/entity"
+	"github.com/k1v4/Pinger/backend/internal/usecase"
 	"github.com/k1v4/Pinger/backend/pkg/DB/postgres"
 )
 
@@ -21,21 +25,30 @@ func NewContainerRepo(pg *postgres.Postgres) *ContainerRepo {
 }
 
 func (cr *ContainerRepo) GetContainer(ctx context.Context, ip string) (entity.Container, error) {
-	sql, args, err := cr.Builder.
+	s, args, err := cr.Builder.
 		Select("*").
 		From("containers").
 		Where(sq.Eq{"ip": ip}).
 		ToSql()
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Container{}, usecase.ErrNoIp
+		}
+
 		return entity.Container{}, fmt.Errorf("ContainerRepo-GetContainer: %w", err)
 	}
 
 	var container entity.Container
 
 	err = cr.Pool.
-		QueryRow(ctx, sql, args...).
+		QueryRow(ctx, s, args...).
 		Scan(&container.IpAddr, &container.PingTime, &container.LastSuccessful)
 	if err != nil {
+		//fmt.Println(err, sql.ErrNoRows)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return entity.Container{}, usecase.ErrNoIp
+		}
+
 		return entity.Container{}, fmt.Errorf("ContainerRepo-GetContainer: %w", err)
 	}
 
