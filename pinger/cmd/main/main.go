@@ -36,7 +36,7 @@ func pingfunc(ip string) (int, bool) {
 		return 0, false
 	}
 
-	pinger.Count = 7
+	pinger.Count = 5
 	pinger.Timeout = time.Second * 5
 	err = pinger.Run()
 	if err != nil {
