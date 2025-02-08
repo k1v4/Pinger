@@ -10,6 +10,8 @@ RUN go build -o ./bin/app cmd/main/main.go
 
 FROM alpine AS runner
 
+RUN apk add --no-cache iputils
+
 COPY --from=builder /usr/local/src/bin/app /
 
 EXPOSE 8081

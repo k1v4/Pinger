@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - ping_network
 
   pinger:
     build:
@@ -36,7 +36,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - app-network
+      - ping_network
 
   postgres_pinger:
     image: postgres:15-alpine
@@ -55,15 +55,15 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     healthcheck:
       test: [ "CMD-SHELL", "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 5s
-      timeout: 5s
+      interval: 15s
+      timeout: 10s
       retries: 5
     networks:
-      - app-network
+      - ping_network
 
 volumes:
   postgres_data:
 
 networks:
-  app-network:
+  ping_network:
     driver: bridge

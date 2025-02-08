@@ -11,6 +11,7 @@ import (
 	"github.com/k1v4/Pinger/backend/pkg/httpserver"
 	"github.com/k1v4/Pinger/backend/pkg/logger"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"os"
 	"os/signal"
 	"strconv"
@@ -50,6 +51,10 @@ func main() {
 	)
 
 	handler := echo.New()
+	handler.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:3000", "http://10.255.196.171:3000"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 	v1.NewRouter(handler, loggerBack, containerUseCase)
 
 	httpServer := httpserver.New(handler, httpserver.Port(strconv.Itoa(cfg.RestServerPort)))
