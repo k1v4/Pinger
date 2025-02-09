@@ -76,6 +76,7 @@ func (tr *conatainerRoutes) CheckPingContainer(c echo.Context) error {
 		return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
 	}
 
+	fmt.Println(ip, u.IsSuccessful)
 	if !u.IsSuccessful {
 		container, err2 := tr.t.UpdateContainer(ctx, entity.Container{
 			IpAddr:         ip,

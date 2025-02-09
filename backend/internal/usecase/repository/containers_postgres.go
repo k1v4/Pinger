@@ -59,6 +59,7 @@ func (cr *ContainerRepo) GetAllContainers(ctx context.Context) ([]entity.Contain
 	sql, _, err := cr.Builder.
 		Select("*").
 		From("containers").
+		OrderBy("ip ASC").
 		ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("ContainerRepo-GetAllContainers-r.Builder: %w", err)
