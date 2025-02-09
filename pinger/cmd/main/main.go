@@ -43,14 +43,11 @@ func isHostAvailable(host string) bool {
 }
 
 func getDockerHost() string {
-	// Проверяем переменную окружения DOCKER_HOST
 	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
 		return dockerHost
 	}
 
-	// Выбираем хост в зависимости от ОС
 	var dockerHost string
-	fmt.Println(runtime.GOOS)
 	switch runtime.GOOS {
 	case "linux":
 		dockerHost = "unix:///var/run/docker.sock"
@@ -62,7 +59,7 @@ func getDockerHost() string {
 
 	// Проверяем доступность хоста
 	if strings.HasPrefix(dockerHost, "tcp://") && !isHostAvailable(dockerHost) {
-		fmt.Println("Хост", dockerHost, "недоступен. Использую fallback: tcp://localhost:2375")
+		log.Println("Хост", dockerHost, "недоступен. Использую fallback: tcp://localhost:2375")
 		return "tcp://localhost:2375"
 	}
 
@@ -70,22 +67,18 @@ func getDockerHost() string {
 }
 
 func pingFunc(ip string) (int, bool) {
-	start := time.Now()                                    // Засекаем время начала
-	_, err := exec.Command("ping", "-c", "4", ip).Output() // Выполняем ping
+	start := time.Now()
+	_, err := exec.Command("ping", "-c", "4", ip).Output()
 	if err != nil {
-		fmt.Println(ip, err)
-		return 0, false // Если ошибка, возвращаем неудачный статус
+		return 0, false
 	}
 
 	return int(time.Since(start).Milliseconds()), true
 }
 
 func takeDockerContainers() []dockerContainer {
-	h := getDockerHost()
-	fmt.Println(h)
-
 	cli, err := client.NewClientWithOpts(
-		client.WithHost(h), // Windows
+		client.WithHost(getDockerHost()),
 		client.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
@@ -167,7 +160,6 @@ func uniteConteiners() {
 		isConnected := false
 
 		for k := range net.Containers {
-			fmt.Println(k)
 			if k == c.ID {
 				isConnected = true
 				break
