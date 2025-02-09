@@ -60,7 +60,7 @@ const DataTable: React.FC = () => {
                 <td>{item.ping_time} мс</td>
                 <td>
                   {item.last_successful
-                    ? format(parseISO(item.last_successful), "dd.MM.yyyy")
+                    ? format(parseISO(item.last_successful), "dd.MM.yyyy HH:mm")
                     : "Нет данных"}
                 </td>
               </tr>

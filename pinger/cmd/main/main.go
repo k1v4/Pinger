@@ -23,9 +23,9 @@ type dockerContainer struct {
 }
 
 type PingResult struct {
-	IP             string    `json:"ip"`        // ip-адрес контейнера
-	PingTime       int       `json:"ping_time"` // продолжительность пинга в миллисекундах
-	Success        bool      `json:"success"`   // успешен ли pingFunc
+	IP             string    `json:"ip"`            // ip-адрес контейнера
+	PingTime       int       `json:"ping_time"`     // продолжительность пинга в миллисекундах
+	Success        bool      `json:"is_successful"` // успешен ли pingFunc
 	LastSuccessful time.Time `json:"last_successful"`
 }
 
@@ -81,6 +81,10 @@ func takeDockerContainers() []dockerContainer {
 			continue
 		}
 
+		if _, ok := containerDetails.NetworkSettings.Networks["ping_network"]; !ok {
+			continue
+		}
+		
 		ipAddress := containerDetails.NetworkSettings.Networks["ping_network"].IPAddress
 
 		if ipAddress == "" {
