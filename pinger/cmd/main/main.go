@@ -29,25 +29,6 @@ type PingResult struct {
 	LastSuccessful time.Time `json:"last_successful"`
 }
 
-//func pingFunc(ip string) (int, bool) {
-//	pinger, err := ping.NewPinger(ip)
-//	if err != nil {
-//		log.Printf("Ошибка при создании Pinger: %s\n", err)
-//		return 0, false
-//	}
-//
-//	pinger.Count = 5
-//	pinger.Timeout = time.Second * 5
-//	err = pinger.Run()
-//	if err != nil {
-//		log.Printf("Ошибка при выполнении пинга: %s\n", err)
-//		return 0, false
-//	}
-//
-//	stats := pinger.Statistics()
-//	return int(stats.AvgRtt.Milliseconds()), stats.PacketsRecv > 0
-//}
-
 func pingFunc(ip string) (int, bool) {
 	start := time.Now()                                    // Засекаем время начала
 	_, err := exec.Command("ping", "-c", "4", ip).Output() // Выполняем ping
@@ -84,7 +65,7 @@ func takeDockerContainers() []dockerContainer {
 		if _, ok := containerDetails.NetworkSettings.Networks["ping_network"]; !ok {
 			continue
 		}
-		
+
 		ipAddress := containerDetails.NetworkSettings.Networks["ping_network"].IPAddress
 
 		if ipAddress == "" {
@@ -151,13 +132,12 @@ func uniteConteiners() {
 		}
 
 		if !isConnected {
-			log.Println(c.Image, c.NetworkSettings.Networks)
 			err = cli.NetworkConnect(ctx, networkName, c.ID, nil)
 			if err != nil {
 				log.Printf("Ошибка подключения контейнера %s к сети %s: %v", c.ID, networkName, err)
 			} else {
 				log.Printf("Контейнер %s подключен к сети %s\n", c.Image, networkName)
-				// Перезапускаем контейнер после подключения к сети
+
 				err = cli.ContainerRestart(ctx, c.ID, container.StopOptions{})
 				if err != nil {
 					log.Printf("Ошибка перезапуска контейнера %s: %v", c.Image, err)
@@ -177,7 +157,6 @@ func main() {
 	for {
 		uniteConteiners()
 		dockerContainers := takeDockerContainers()
-		fmt.Println(dockerContainers)
 
 		for _, ip := range dockerContainers {
 			pingTime, success := pingFunc(ip.Ip) // Пингуем IP-адрес
