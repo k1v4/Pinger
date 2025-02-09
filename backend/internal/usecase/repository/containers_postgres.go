@@ -44,7 +44,6 @@ func (cr *ContainerRepo) GetContainer(ctx context.Context, ip string) (entity.Co
 		QueryRow(ctx, s, args...).
 		Scan(&container.IpAddr, &container.PingTime, &container.LastSuccessful)
 	if err != nil {
-		//fmt.Println(err, sql.ErrNoRows)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entity.Container{}, usecase.ErrNoIp
 		}

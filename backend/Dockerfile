@@ -16,6 +16,6 @@ COPY --from=builder /usr/local/src/bin/app /
 
 EXPOSE 8080
 
-COPY .env /
+COPY test.env /
 
 CMD ["/app"]

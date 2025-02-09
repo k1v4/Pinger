@@ -12,7 +12,7 @@ type Config struct {
 }
 
 func MustLoadConfig() *Config {
-	//errEnv := godotenv.Load(".env") // Явно указываем путь
+	//errEnv := godotenv.Load("test.env") // Явно указываем путь
 	//if errEnv != nil {
 	//	panic(errEnv)
 	//}

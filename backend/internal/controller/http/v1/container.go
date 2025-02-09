@@ -19,7 +19,7 @@ type conatainerRoutes struct {
 func newContainerRoutes(handler *echo.Group, t usecase.Container, l logger.Logger) {
 	r := &conatainerRoutes{t, l}
 
-	// Группа роутов для /v1/containers
+	// группа роутов для /v1/containers
 	h := handler.Group("/containers")
 	{
 		// GET /v1/containers
@@ -76,7 +76,6 @@ func (tr *conatainerRoutes) CheckPingContainer(c echo.Context) error {
 		return fmt.Errorf("http-v1-CheckPingContainer: %w", err)
 	}
 
-	fmt.Println(ip, u.IsSuccessful)
 	if !u.IsSuccessful {
 		container, err2 := tr.t.UpdateContainer(ctx, entity.Container{
 			IpAddr:         ip,
