@@ -8,8 +8,12 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/client"
@@ -29,6 +33,42 @@ type PingResult struct {
 	LastSuccessful time.Time `json:"last_successful"`
 }
 
+func isHostAvailable(host string) bool {
+	conn, err := net.Dial("tcp", strings.TrimPrefix(host, "tcp://"))
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+func getDockerHost() string {
+	// Проверяем переменную окружения DOCKER_HOST
+	if dockerHost := os.Getenv("DOCKER_HOST"); dockerHost != "" {
+		return dockerHost
+	}
+
+	// Выбираем хост в зависимости от ОС
+	var dockerHost string
+	fmt.Println(runtime.GOOS)
+	switch runtime.GOOS {
+	case "linux":
+		dockerHost = "unix:///var/run/docker.sock"
+	case "darwin", "windows":
+		dockerHost = "tcp://host.docker.internal:2375"
+	default:
+		dockerHost = "tcp://localhost:2375"
+	}
+
+	// Проверяем доступность хоста
+	if strings.HasPrefix(dockerHost, "tcp://") && !isHostAvailable(dockerHost) {
+		fmt.Println("Хост", dockerHost, "недоступен. Использую fallback: tcp://localhost:2375")
+		return "tcp://localhost:2375"
+	}
+
+	return dockerHost
+}
+
 func pingFunc(ip string) (int, bool) {
 	start := time.Now()                                    // Засекаем время начала
 	_, err := exec.Command("ping", "-c", "4", ip).Output() // Выполняем ping
@@ -41,8 +81,11 @@ func pingFunc(ip string) (int, bool) {
 }
 
 func takeDockerContainers() []dockerContainer {
+	h := getDockerHost()
+	fmt.Println(h)
+
 	cli, err := client.NewClientWithOpts(
-		client.WithHost("tcp://host.docker.internal:2375"), // Используем TCP
+		client.WithHost(h), // Windows
 		client.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
