@@ -38,6 +38,24 @@ services:
     networks:
       - ping_network
 
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: [ "CMD", "curl", "-I", "http://localhost:3000" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ping_network
+
   postgres_pinger:
     image: postgres:15-alpine
     container_name: postgres_container_pinger
